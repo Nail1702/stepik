@@ -1,17 +1,11 @@
 ﻿using ConsoleApp1.Models;
 using ConsoleApp1.Services;
-using MySql.Data.MySqlClient;
+using System;
 
 class Program
 {
     public static void Main()
     {
-        string connectionString = "Server=localhost;Database=stepik;Uid=root;Pwd=260808AnAnAn;";
-
-        // Показываем всех пользователей при старте
-        ShowAllUsers(connectionString);
-
-        // Главное меню
         while (true)
         {
             Console.WriteLine(@"
@@ -22,7 +16,8 @@ class Program
 Выберите действие (введите число и нажмите Enter):
 
 1. Зарегистрироваться
-2. Закрыть приложение
+2. Войти
+3. Закрыть приложение
 
 ************************************************
 ");
@@ -31,9 +26,12 @@ class Program
             if (choice == "1")
             {
                 RegisterUser();
-                ShowAllUsers(connectionString); // показываем обновлённый список
             }
             else if (choice == "2")
+            {
+                LoginUser();
+            }
+            else if (choice == "3")
             {
                 Console.WriteLine("До свидания!");
                 break;
@@ -45,40 +43,6 @@ class Program
         }
     }
 
-    // Вывод всех пользователей из таблицы users
-    public static void ShowAllUsers(string connectionString)
-    {
-        using var connection = new MySqlConnection(connectionString);
-        connection.Open();
-
-        string sqlQuery = "SELECT id, full_name, join_date, is_active, solved_tasks FROM users;";
-        using var command = new MySqlCommand(sqlQuery, connection);
-        using var reader = command.ExecuteReader();
-
-        if (reader.HasRows)
-        {
-            Console.WriteLine($"{"id",-5} {"full_name",-30} {"join_date",-12} {"is_active",-10} {"solved_tasks",-15}");
-            Console.WriteLine(new string('-', 75));
-
-            while (reader.Read())
-            {
-                var id = reader["id"].ToString().PadRight(5);
-                var fullName = reader["full_name"].ToString().PadRight(30);
-                var joinDate = Convert.ToDateTime(reader["join_date"]).ToShortDateString().PadRight(12);
-                var isActive = Convert.ToBoolean(reader["is_active"]) ? "Да" : "Нет";
-                var solvedTasks = reader["solved_tasks"].ToString().PadRight(15);
-
-                Console.WriteLine($"{id} {fullName} {joinDate} {isActive,-10} {solvedTasks}");
-            }
-        }
-        else
-        {
-            Console.WriteLine("Пользователей нет.");
-        }
-        Console.WriteLine();
-    }
-
-    // Регистрация нового пользователя
     public static void RegisterUser()
     {
         Console.WriteLine("Введите имя и фамилию через пробел и нажмите Enter:");
@@ -112,6 +76,29 @@ class Program
         else
         {
             Console.WriteLine("Произошла ошибка, произведен выход на главную страницу\n");
+        }
+    }
+
+    public static void LoginUser()
+    {
+        Console.WriteLine("Введите имя и фамилию через пробел и нажмите Enter:");
+        string input = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            Console.WriteLine("Пользователь не найден, произведен выход на главную страницу\n");
+            return;
+        }
+
+        User user = UsersService.Get(input);
+
+        if (user != null)
+        {
+            Console.WriteLine($"Пользователь '{user.FullName}' успешно вошел\n");
+        }
+        else
+        {
+            Console.WriteLine("Пользователь не найден, произведен выход на главную страницу\n");
         }
     }
 }

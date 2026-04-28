@@ -31,5 +31,37 @@ namespace ConsoleApp1.Services
                 return false;
             }
         }
+
+        public static User Get(string fullName)
+        {
+            string connectionString = Constant.ConnectionString;
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                // Используем реальные имена колонок: full_name, details, join_date, avatar, is_active
+                string sqlQuery = "SELECT full_name, details, join_date, avatar, is_active FROM users WHERE full_name = @fullName AND is_active = 1";
+                using (MySqlCommand command = new MySqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@fullName", fullName);
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            User user = new User();
+                            user.FullName = reader.IsDBNull(reader.GetOrdinal("full_name")) ? null : reader.GetString(reader.GetOrdinal("full_name"));
+                            user.Details = reader.IsDBNull(reader.GetOrdinal("details")) ? null : reader.GetString(reader.GetOrdinal("details"));
+                            user.JoinDate = reader.IsDBNull(reader.GetOrdinal("join_date")) ? DateTime.MinValue : reader.GetDateTime(reader.GetOrdinal("join_date"));
+                            user.Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"));
+                            user.IsActive = reader.IsDBNull(reader.GetOrdinal("is_active")) ? false : reader.GetBoolean(reader.GetOrdinal("is_active"));
+                            return user;
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
